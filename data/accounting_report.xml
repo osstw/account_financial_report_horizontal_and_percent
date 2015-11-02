@@ -1,0 +1,16 @@
+<openerp>
+    <data>
+        <!-- Inherit Form View to Modify it -->
+        <record id="account_common_report_view" model="ir.ui.view">
+            <field name="name">account_common_report_view</field>
+            <field name="model">accounting.report</field>
+            <field name="inherit_id" ref="account.account_common_report_view"/>
+            <field name="arch" type="xml">
+                <xpath expr="//group[1]" position="inside">
+                    <field name="show_percent"/>
+                    <field name="left_and_right"/>
+                </xpath>
+            </field>
+        </record>
+    </data>
+</openerp>

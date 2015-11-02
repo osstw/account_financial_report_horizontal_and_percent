@@ -1,0 +1,393 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openerp>
+    <data>
+        <template id="additional_tds">
+            <t>
+                <td class="text-right">
+                    <span t-att-style="style"
+                          t-esc="(formatLang(a.get('balance'), currency_obj=res_company.currency_id) if a.get('balance') &gt;= 0 else '(%s)' % formatLang(abs(a.get('balance')), currency_obj=res_company.currency_id)) if a.get('level')==2 else ''"/>
+                </td>
+                <td class="text-right">
+                    <span t-att-style="style"
+                          t-esc="(formatLang(a.get('balance'), currency_obj=res_company.currency_id) if a.get('balance') &gt;= 0 else '(%s)' % formatLang(abs(a.get('balance')), currency_obj=res_company.currency_id)) if a.get('level')==1 else ''"/>
+                </td>
+                <td t-if="income_balance != 0" class="text-right" style="white-space: nowrap;">
+                    <span t-att-style="style"
+                          t-esc="'%s%.2f%s' % ('(' if a.get('balance') &lt; 0 else '',(abs(a.get('balance')) * 100.0 / income_balance) if income_balance != 0 else '',')' if a.get('balance') &lt; 0 else '')"/>
+                </td>
+                <td t-if="income_balance == 0"/>
+            </t>
+        </template>
+        <template id="additional_ths">
+            <th class="text-right">
+                小计
+            </th>
+            <th class="text-right">
+                合计
+            </th>
+            <th class="text-right">
+                %
+            </th>
+        </template>
+
+        <template id="report_financial" inherit_id="account.report_financial">
+
+            <!--<t t-if="data['left_and_right']"/>-->
+            <!-- replace all tables for different selections and do it in one table /-->
+            <!-- with credit/debit  /-->
+            <xpath expr="//div[@class='page']/table" position="replace"/>
+            <!-- unfiltered without credit/debit /-->
+            <xpath expr="//div[@class='page']/table" position="replace"/>
+            <!-- filtered without credit/debit /-->
+            <xpath expr="//div[@class='page']/table" position="replace">
+                <!--分左右的效果-->
+                <t t-if="data['left_and_right']">
+                    <div class="row">
+                        <t t-set="income_balance" t-value="0"/>
+                        <div class="col-xs-6" t-foreach="[get_left_lines, get_right_lines]" t-as="get_lines_function">
+                            <t t-set="temp_lines" t-value="get_lines_function(data)"/>
+                            <t t-if="data['show_percent']">
+                                <t t-set="income_line"
+                                   t-value="[l for l in temp_lines if l['level']==1 and l['account_type'] == False and l['type'] == 'report' and l['name'] in ('income','Income','INCOME',u'\u6536\u5165')]"/>
+                                <t t-set="income_line" t-value="income_line[0] if income_line else None"/>
+                                <t t-set="income_balance"
+                                   t-value="income_line['balance'] if income_line else income_balance"/>
+                            </t>
+                            <table class="table table-condensed">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th class="text-right" t-if="data['form']['debit_credit'] == 1">Debit</th>
+                                        <th class="text-right" t-if="data['form']['debit_credit'] == 1">Credit</th>
+                                        <th class="text-right">Balance</th>
+                                        <th class="text-right"
+                                            t-if="data['form']['enable_filter'] == 1 and not data['form']['debit_credit']">
+                                            <span t-esc="data['form']['label_filter']"/>
+                                        </th>
+                                        <t t-if="data['show_percent']">
+                                            <t t-call="account_financial_report_horizontal_and_percent.additional_ths"/>
+                                        </t>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-foreach="temp_lines" t-as="a">
+                                        <t t-if="a['level'] != 0">
+                                            <t t-if="a.get('level') &gt; 3">
+                                                <t t-set="style" t-value="'font-weight: normal;'"/>
+                                            </t>
+                                            <t t-if="not a.get('level') &gt; 3">
+                                                <t t-set="style" t-value="'font-weight: bold;'"/>
+                                            </t>
+                                            <td>
+                                                <span style="color: white;" t-esc="'..' * a.get('level', 0)"/>
+                                                <span t-att-style="style" t-esc="a.get('name')"/>
+                                            </td>
+                                            <td class="text-right" style="white-space: nowrap;"
+                                                t-if="data['form']['debit_credit'] == 1">
+                                                <t t-if="a.get('debit') &gt;= 0">
+                                                    <span t-att-style="style"
+                                                          t-esc="formatLang(a.get('debit'), currency_obj=res_company.currency_id)"/>
+                                                </t>
+                                                <t t-if="a.get('debit') &lt; 0">
+                                                    <span t-att-style="style"
+                                                          t-esc="'(%s)' % formatLang(abs(a.get('debit')), currency_obj=res_company.currency_id)"/>
+                                                </t>
+                                            </td>
+                                            <td class="text-right" style="white-space: nowrap;"
+                                                t-if="data['form']['debit_credit'] == 1">
+                                                <t t-if="a.get('credit') &gt;= 0">
+                                                    <span t-att-style="style"
+                                                          t-esc="formatLang(a.get('credit'), currency_obj=res_company.currency_id)"/>
+                                                </t>
+                                                <t t-if="a.get('credit') &lt; 0">
+                                                    <span t-att-style="style"
+                                                          t-esc="'(%s)' % formatLang(abs(a.get('credit')), currency_obj=res_company.currency_id)"/>
+                                                </t>
+                                            </td>
+                                            <td class="text-right">
+                                                <t t-if="a.get('balance') &gt;= 0">
+                                                    <span t-att-style="style"
+                                                          t-esc="formatLang(a.get('balance'), currency_obj=res_company.currency_id)"/>
+                                                </t>
+                                                <t t-if="a.get('balance') &lt;= 0">
+                                                    <span t-att-style="style"
+                                                          t-esc="'(%s)' % formatLang(abs(a.get('balance')), currency_obj=res_company.currency_id)"/>
+                                                </t>
+                                            </td>
+                                            <td class="text-right"
+                                                t-if="data['form']['enable_filter'] == 1 and not data['form']['debit_credit']">
+                                                <span t-att-style="style"
+                                                      t-esc="formatLang(a.get('balance_cmp'), currency_obj=res_company.currency_id)"/>
+                                            </td>
+                                            <t t-if="data['show_percent']">
+                                                <td class="text-right">
+                                                    <span t-att-style="style"
+                                                          t-esc="(formatLang(a.get('balance'), currency_obj=res_company.currency_id) if a.get('balance') &gt;= 0 else '(%s)' % formatLang(abs(a.get('balance')), currency_obj=res_company.currency_id)) if a.get('level')==2 else ''"/>
+                                                </td>
+                                                <td class="text-right">
+                                                    <span t-att-style="style"
+                                                          t-esc="(formatLang(a.get('balance'), currency_obj=res_company.currency_id) if a.get('balance') &gt;= 0 else '(%s)' % formatLang(abs(a.get('balance')), currency_obj=res_company.currency_id)) if a.get('level')==1 else ''"/>
+                                                </td>
+                                                <td t-if="income_balance != 0" class="text-right"
+                                                    style="white-space: nowrap;">
+                                                    <t t-if="a.get('balance') &gt;= 0">
+                                                        <span t-att-style="style"
+                                                              t-esc="'%.2f' % (a.get('balance') * 100.0 / income_balance)"/>
+                                                    </t>
+                                                    <t t-if="a.get('balance') &lt; 0">
+                                                        <span t-att-style="style"
+                                                              t-esc="'(%.2f)' % (abs(a.get('balance')) * 100.0 / income_balance)"/>
+                                                    </t>
+                                                </td>
+                                                <td t-if="income_balance == 0"/>
+                                            </t>
+                                        </t>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </t>
+
+                <!--原始的效果 加百分比-->
+                <t t-if="not data['left_and_right'] and data['show_percent']">
+                    <t>
+                        <t t-set="temp_lines" t-value="get_lines(data)"/>
+                        <t t-set="income_line"
+                           t-value="[l for l in temp_lines if l['level']==1 and l['account_type'] == False and l['type'] == 'report' and l['name'] in ('income','Income','INCOME',u'\u6536\u5165')]"/>
+                        <t t-set="income_line" t-value="income_line[0] if income_line else None"/>
+                        <t t-set="income_balance" t-value="income_line['balance'] if income_line else 0"/>
+                    </t>
+                    <table class="table table-condensed" t-if="data['form']['debit_credit'] == 1">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th class="text-right">Debit</th>
+                                <th class="text-right">Credit</th>
+                                <th class="text-right">Balance</th>
+                                <t t-call="account_financial_report_horizontal_and_percent.additional_ths"/>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="get_lines(data)" t-as="a">
+                                <t t-if="a['level'] != 0">
+                                    <t t-if="a.get('level') &gt; 3">
+                                        <t t-set="style" t-value="'font-weight: normal;'"/>
+                                    </t>
+                                    <t t-if="not a.get('level') &gt; 3">
+                                        <t t-set="style" t-value="'font-weight: bold;'"/>
+                                    </t>
+
+                                    <td>
+                                        <span style="color: white;" t-esc="'..' * a.get('level', 0)"/>
+                                        <span t-att-style="style" t-esc="a.get('name')"/>
+                                    </td>
+                                    <td class="text-right" style="white-space: nowrap;">
+                                        <span t-att-style="style"
+                                              t-esc="formatLang(a.get('debit'), currency_obj=res_company.currency_id)"/>
+                                    </td>
+                                    <td class="text-right" style="white-space: nowrap;">
+                                        <span t-att-style="style"
+                                              t-esc="formatLang(a.get('credit'), currency_obj=res_company.currency_id)"/>
+                                    </td>
+                                    <td class="text-right" style="white-space: nowrap;">
+                                        <span t-att-style="style"
+                                              t-esc="formatLang(a.get('balance'), currency_obj=res_company.currency_id)"/>
+                                    </td>
+                                    <t t-call="account_financial_report_horizontal_and_percent.additional_tds"/>
+                                </t>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <table class="table table-condensed"
+                           t-if="not data['form']['enable_filter'] and not data['form']['debit_credit']">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th class="text-right">Balance</th>
+                                <t t-call="account_financial_report_horizontal_and_percent.additional_ths"/>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="get_lines(data)" t-as="a">
+                                <t t-if="a['level'] != 0">
+                                    <t t-if="a.get('level') &gt; 3">
+                                        <t t-set="style" t-value="'font-weight: normal;'"/>
+                                    </t>
+                                    <t t-if="not a.get('level') &gt; 3">
+                                        <t t-set="style" t-value="'font-weight: bold;'"/>
+                                    </t>
+
+                                    <td>
+                                        <span style="color: white;" t-esc="'..' * a.get('level', 0)"/>
+                                        <span t-att-style="style" t-esc="a.get('name')"/>
+                                    </td>
+                                    <td class="text-right">
+                                        <span t-att-style="style"
+                                              t-esc="formatLang(a.get('balance'), currency_obj=res_company.currency_id)"/>
+                                    </td>
+                                    <t t-call="account_financial_report_horizontal_and_percent.additional_tds"/>
+                                </t>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <table class="table table-condensed"
+                           t-if="data['form']['enable_filter'] == 1 and not data['form']['debit_credit']">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th class="text-right">Balance</th>
+                                <th class="text-right">
+                                    <span t-esc="data['form']['label_filter']"/>
+                                </th>
+                                <t t-call="account_financial_report_horizontal_and_percent.additional_ths"/>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="get_lines(data)" t-as="a">
+                                <t t-if="a['level'] != 0">
+                                    <t t-if="a.get('level') &gt; 3">
+                                        <t t-set="style" t-value="'font-weight: normal;'"/>
+                                    </t>
+                                    <t t-if="not a.get('level') &gt; 3">
+                                        <t t-set="style" t-value="'font-weight: bold;'"/>
+                                    </t>
+
+                                    <td>
+                                        <span style="color: white;" t-esc="'..' * a.get('level', 0)"/>
+                                        <span t-att-style="style" t-esc="a.get('name')"/>
+                                    </td>
+                                    <td class="text-right">
+                                        <span t-att-style="style"
+                                              t-esc="formatLang(a.get('balance'), currency_obj=res_company.currency_id)"/>
+                                    </td>
+                                    <td class="text-right">
+                                        <span t-att-style="style"
+                                              t-esc="formatLang(a.get('balance_cmp'), currency_obj=res_company.currency_id)"/>
+                                    </td>
+                                    <t t-call="account_financial_report_horizontal_and_percent.additional_tds"/>
+                                </t>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                </t>
+
+                <!--原始的效果-->
+                <t t-if="not data['left_and_right'] and not data['show_percent']">
+                    <table class="table table-condensed" t-if="data['form']['debit_credit'] == 1">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th class="text-right">Debit</th>
+                                <th class="text-right">Credit</th>
+                                <th class="text-right">Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="get_lines(data)" t-as="a">
+                                <t t-if="a['level'] != 0">
+                                    <t t-if="a.get('level') &gt; 3">
+                                        <t t-set="style" t-value="'font-weight: normal;'"/>
+                                    </t>
+                                    <t t-if="not a.get('level') &gt; 3">
+                                        <t t-set="style" t-value="'font-weight: bold;'"/>
+                                    </t>
+
+                                    <td>
+                                        <span style="color: white;" t-esc="'..' * a.get('level', 0)"/>
+                                        <span t-att-style="style" t-esc="a.get('name')"/>
+                                    </td>
+                                    <td class="text-right" style="white-space: nowrap;">
+                                        <span t-att-style="style"
+                                              t-esc="formatLang(a.get('debit'), currency_obj=res_company.currency_id)"/>
+                                    </td>
+                                    <td class="text-right" style="white-space: nowrap;">
+                                        <span t-att-style="style"
+                                              t-esc="formatLang(a.get('credit'), currency_obj=res_company.currency_id)"/>
+                                    </td>
+                                    <td class="text-right" style="white-space: nowrap;">
+                                        <span t-att-style="style"
+                                              t-esc="formatLang(a.get('balance'), currency_obj=res_company.currency_id)"/>
+                                    </td>
+                                </t>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <table class="table table-condensed"
+                           t-if="not data['form']['enable_filter'] and not data['form']['debit_credit']">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th class="text-right">Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="get_lines(data)" t-as="a">
+                                <t t-if="a['level'] != 0">
+                                    <t t-if="a.get('level') &gt; 3">
+                                        <t t-set="style" t-value="'font-weight: normal;'"/>
+                                    </t>
+                                    <t t-if="not a.get('level') &gt; 3">
+                                        <t t-set="style" t-value="'font-weight: bold;'"/>
+                                    </t>
+
+                                    <td>
+                                        <span style="color: white;" t-esc="'..' * a.get('level', 0)"/>
+                                        <span t-att-style="style" t-esc="a.get('name')"/>
+                                    </td>
+                                    <td class="text-right">
+                                        <span t-att-style="style"
+                                              t-esc="formatLang(a.get('balance'), currency_obj=res_company.currency_id)"/>
+                                    </td>
+                                </t>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <table class="table table-condensed"
+                           t-if="data['form']['enable_filter'] == 1 and not data['form']['debit_credit']">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th class="text-right">Balance</th>
+                                <th class="text-right">
+                                    <span t-esc="data['form']['label_filter']"/>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="get_lines(data)" t-as="a">
+                                <t t-if="a['level'] != 0">
+                                    <t t-if="a.get('level') &gt; 3">
+                                        <t t-set="style" t-value="'font-weight: normal;'"/>
+                                    </t>
+                                    <t t-if="not a.get('level') &gt; 3">
+                                        <t t-set="style" t-value="'font-weight: bold;'"/>
+                                    </t>
+
+                                    <td>
+                                        <span style="color: white;" t-esc="'..' * a.get('level', 0)"/>
+                                        <span t-att-style="style" t-esc="a.get('name')"/>
+                                    </td>
+                                    <td class="text-right">
+                                        <span t-att-style="style"
+                                              t-esc="formatLang(a.get('balance'), currency_obj=res_company.currency_id)"/>
+                                    </td>
+                                    <td class="text-right">
+                                        <span t-att-style="style"
+                                              t-esc="formatLang(a.get('balance_cmp'), currency_obj=res_company.currency_id)"/>
+                                    </td>
+                                </t>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                </t>
+            </xpath>
+        </template>
+    </data>
+</openerp>

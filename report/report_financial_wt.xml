@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openerp>
+    <data>
+        <template id="additional_tds">
+            <t>
+                <td class="text-right">
+                    <span t-att-style="style"
+                          t-esc="(formatLang(a.get('balance'), currency_obj=res_company.currency_id) if a.get('balance') &gt;= 0 else '(%s)' % formatLang(abs(a.get('balance')), currency_obj=res_company.currency_id)) if a.get('level')==2 else ''"/>
+                </td>
+                <td class="text-right">
+                    <span t-att-style="style"
+                          t-esc="(formatLang(a.get('balance'), currency_obj=res_company.currency_id) if a.get('balance') &gt;= 0 else '(%s)' % formatLang(abs(a.get('balance')), currency_obj=res_company.currency_id)) if a.get('level')==1 else ''"/>
+                </td>
+                <td t-if="income_balance != 0" class="text-right" style="white-space: nowrap;">
+                    <span t-att-style="style"
+                          t-esc="'%s%.2f%s' % ('(' if a.get('balance') &lt; 0 else '',(abs(a.get('balance')) * 100.0 / income_balance) if income_balance != 0 else '',')' if a.get('balance') &lt; 0 else '')"/>
+                </td>
+                <td t-if="income_balance == 0"/>
+            </t>
+        </template>
+        <template id="additional_ths">
+            <th class="text-right">
+                小计
+            </th>
+            <th class="text-right">
+                合计
+            </th>
+            <th class="text-right">
+                %
+            </th>
+        </template>
+
+        <template id="report_financial" inherit_id="account.report_financial">
+
+            <xpath expr="//div[@class='page']/table[1]" position="before">
+                <t>
+                    <t t-set="temp_lines" t-value="get_lines(data)"/>
+                    <t t-set="income_line"
+                       t-value="[l for l in temp_lines if l['level']==1 and l['account_type'] == False and l['type'] == 'report' and l['name'] in ('income','Income','INCOME',u'\u6536\u5165')]"/>
+                    <t t-set="income_line" t-value="income_line[0] if income_line else None"/>
+                    <t t-set="income_balance" t-value="income_line['balance'] if income_line else 0"/>
+                </t>
+            </xpath>
+            <xpath expr="//div[@class='page']/table[1]/thead/tr" position="inside">
+                <t t-call="account_financial_report_horizontal_and_percent.additional_ths"/>
+            </xpath>
+            <xpath expr="//div[@class='page']/table[1]/tbody/tr/t" position="inside">
+                <t t-call="account_financial_report_horizontal_and_percent.additional_tds"/>
+            </xpath>
+
+            <xpath expr="//div[@class='page']/table[2]/thead/tr" position="inside">
+                <t t-call="account_financial_report_horizontal_and_percent.additional_ths"/>
+            </xpath>
+            <xpath expr="//div[@class='page']/table[2]/tbody/tr/t" position="inside">
+                <t t-call="account_financial_report_horizontal_and_percent.additional_tds"/>
+            </xpath>
+
+            <xpath expr="//div[@class='page']/table[3]/thead/tr" position="inside">
+                <t t-call="account_financial_report_horizontal_and_percent.additional_ths"/>
+            </xpath>
+            <xpath expr="//div[@class='page']/table[3]/tbody/tr/t" position="inside">
+                <t t-call="account_financial_report_horizontal_and_percent.additional_tds"/>
+            </xpath>
+
+        </template>
+    </data>
+</openerp>
