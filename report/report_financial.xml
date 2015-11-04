@@ -344,8 +344,12 @@
                                         <span t-att-style="style" t-esc="a.get('name')"/>
                                     </td>
                                     <td class="text-right">
-                                        <span t-att-style="style"
-                                              t-esc="formatLang(a.get('balance'), currency_obj=res_company.currency_id)"/>
+                                        <t t-if="a.get('balance') &gt;= 0">
+                                            <span t-att-style="style" t-esc="formatLang(a.get('balance'), currency_obj=res_company.currency_id)"/>
+                                        </t>
+                                        <t t-if="a.get('balance') &lt;0">
+                                            <span t-att-style="style" t-esc=" '(%s)' %formatLang(abs(a.get('balance')), currency_obj=res_company.currency_id)"/>
+                                        </t>esc="formatLang(a.get('balance'), currency_obj=res_company.currency_id)"/>
                                     </td>
                                 </t>
                             </tr>
